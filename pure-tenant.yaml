@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pure-tenant
+spec:
+  selector:
+    matchLabels:
+      app: pure-tenant
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pure-tenant
+    spec:
+      containers:
+      - name: pure-tenant
+        image: pure-tenant:latest
+        imagePullPolicy: Never
