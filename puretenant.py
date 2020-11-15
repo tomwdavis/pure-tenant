@@ -59,7 +59,7 @@ class PureTenant:
         # Prod Settings
         # Get K8s secrets
         config.load_kube_config(config_file='kube-config')
-        v1 = client.CoreV1Api
+        v1 = client.CoreV1Api()
         return v1
 
     def get_es_conn_attrs(self, k8s_connection: client.CoreV1Api, debug: bool=False):
@@ -70,11 +70,11 @@ class PureTenant:
             }
         else:
             # Password
-            sec = str(k8s_connection.read_namespaced_secret("quickstart-es-elastic-user", "default").data)
+            sec = str(k8s_connection.read_namespaced_secret(name="quickstart-es-elastic-user", namespace="default").data)
             password = base64.b64decode(sec.strip().split()[1]).decode("utf-8")
 
             # Certificate
-            sec = k8s_connection.read_namespaced_secret("quickstart-es-http-certs-public", "default").data
+            sec = k8s_connection.read_namespaced_secret(name="quickstart-es-http-certs-public", namespace="default").data
             cert = base64.b64decode(sec["tls.crt"]).decode("utf-8")
             context = create_default_context(cadata=cert)
             
