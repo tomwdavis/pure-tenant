@@ -53,34 +53,39 @@ class PureTenant:
             }
         }
 
-        # Set Elasticsearch Parameters
+    def create_k8s_connection(self) -> client.CoreV1Api:
         # K8s config
 
         # Prod Settings
         # Get K8s secrets
-        config.load_kube_config()
-        v1 = client.CoreV1Api()
-        # Password
-        sec = str(v1.read_namespaced_secret("quickstart-es-elastic-user", "default").data)
-        password = base64.b64decode(sec.strip().split()[1]).decode("utf-8")
+        config.load_kube_config(config_file='kube-config')
+        v1 = client.CoreV1Api
+        return v1
 
-        # Certificate
-        sec = v1.read_namespaced_secret("quickstart-es-http-certs-public", "default").data
-        cert = base64.b64decode(sec["tls.crt"]).decode("utf-8")
-        context = create_default_context(cadata=cert)
-        self.es_params = {
-            'host': 'quickstart-es-http',
-            'port': '9200',
-            'http_auth': ('elastic', password),
-            'scheme': 'https',
-            'ssl_context': context
-        }
-        # Test Config
-        # self.es_params = {
-        #     'host': 'localhost',
-        #     'port': '9200'
-        # }
+    def get_es_conn_attrs(self, k8s_connection: client.CoreV1Api, debug: bool=False):
+        if debug:
+            self.es_params = {
+                'host': 'localhost',
+                'port': '9200'
+            }
+        else:
+            # Password
+            sec = str(k8s_connection.read_namespaced_secret("quickstart-es-elastic-user", "default").data)
+            password = base64.b64decode(sec.strip().split()[1]).decode("utf-8")
 
+            # Certificate
+            sec = k8s_connection.read_namespaced_secret("quickstart-es-http-certs-public", "default").data
+            cert = base64.b64decode(sec["tls.crt"]).decode("utf-8")
+            context = create_default_context(cadata=cert)
+            
+            self.es_params = {
+                'host': 'quickstart-es-http',
+                'port': '9200',
+                'http_auth': ('elastic', password),
+                'scheme': 'https',
+                'ssl_context': context
+            }
+    
     def pull_fa_objects(self, host: str, object_type: str) -> list:
         fa = purestorage.FlashArray(target=self.flasharrays[host]['ip'], api_token=self.flasharrays[host]['auth_token'], verify_https=False)
         if object_type == 'vol':
@@ -234,6 +239,10 @@ class PureTenant:
 
 
 pt = PureTenant()
+
+k8s_conn = pt.create_k8s_connection()
+
+pt.get_es_conn_attrs(k8s_connection=k8s_conn, debug=False)
 
 # Create FlashBlade index with mappings for milliseconds to timestamp
 pt.create_index('flashblade','{"mappings":{"properties":{"timestamp":{"type":"date","format": "epoch_millis"}}}}')

@@ -12,6 +12,7 @@ spec:
       labels:
         app: pure-tenant
     spec:
+      restartPolicy: Never
       containers:
       - name: pure-tenant
         image: tomwdavis/pure-tenant:latest
