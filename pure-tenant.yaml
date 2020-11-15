@@ -14,5 +14,4 @@ spec:
     spec:
       containers:
       - name: pure-tenant
-        image: pure-tenant:latest
-        imagePullPolicy: Never
+        image: tomwdavis/pure-tenant:latest

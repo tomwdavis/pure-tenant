@@ -3,6 +3,9 @@ from elasticsearch import Elasticsearch, helpers
 import purestorage
 from purity_fb import PurityFb, FileSystemResponse, FileSystemPerformanceResponse, BucketPerformanceResponse, rest
 import urllib3
+from kubernetes import client, config
+import base64
+from ssl import create_default_context
 
 class PureTenant:
 
@@ -52,9 +55,25 @@ class PureTenant:
 
         # Set Elasticsearch Parameters
         # K8s config
+
+        # Prod Settings
+        # Get K8s secrets
+        config.load_kube_config()
+        v1 = client.CoreV1Api()
+        # Password
+        sec = str(v1.read_namespaced_secret("quickstart-es-elastic-user", "default").data)
+        password = base64.b64decode(sec.strip().split()[1]).decode("utf-8")
+
+        # Certificate
+        sec = v1.read_namespaced_secret("quickstart-es-http-certs-public", "default").data
+        cert = base64.b64decode(sec["tls.crt"]).decode("utf-8")
+        context = create_default_context(cadata=cert)
         self.es_params = {
-            'host': 'quickstart-es-transport',
-            'port': '9200'
+            'host': 'quickstart-es-http',
+            'port': '9200',
+            'http_auth': ('elastic', password),
+            'scheme': 'https',
+            'ssl_context': context
         }
         # Test Config
         # self.es_params = {
@@ -191,7 +210,7 @@ class PureTenant:
         try:
             es.indices.create(target_index, body=target_body)
         except Exception as e:
-            print("Indexing failed: %s\n" % e)
+            print("Create Index failed: %s\n" % e)
 
     def debug_to_json_file(self, items, filename: str):
         json_object = json.dumps(items)
@@ -201,10 +220,11 @@ class PureTenant:
 
     def elasticsearch_bulk_index(self, target_index: str, stats: list):
         # Test HTTP connection to Elasticsearch
-        try:
-            res = requests.get('http://' + self.es_params['host'] + ':' + self.es_params['port'])
-        except requests.RequestException as e:
-            print("Cannot connect to Elasticsearch - exception: %s\n" % e)
+        # Test is invalid with ECK due to certificate and authentication requirements
+        # try:
+        #     res = requests.get('http://' + self.es_params['host'] + ':' + self.es_params['port'])
+        # except requests.RequestException as e:
+        #     print("Cannot connect to Elasticsearch - exception: %s\n" % e)
 
         es = Elasticsearch([self.es_params])
         try:
