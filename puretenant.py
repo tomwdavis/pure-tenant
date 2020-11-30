@@ -99,7 +99,7 @@ class PureTenant:
             except rest.ApiException as e:
                 print("Exception: %s\n" % e)
         else:
-            raise Exception("Wrong object type specified. Object type should be 'nfs' or 's3'.")
+            raise Exception("Wrong object type specified. Object type should be 'vol' or 'hgroup'.")
 
         names = []
         for item in fa_items:
@@ -245,7 +245,7 @@ k8s_conn = pt.create_k8s_connection()
 pt.get_es_conn_attrs(k8s_connection=k8s_conn, debug=False)
 
 # Create FlashBlade index with mappings for milliseconds to timestamp
-pt.create_index('flashblade','{"mappings":{"properties":{"timestamp":{"type":"date","format": "epoch_millis"}}}}')
+#pt.create_index('flashblade','{"mappings":{"properties":{"timestamp":{"type":"date","format": "epoch_millis"}}}}')
 
 # Process FlashBlade data pull
 s3_stats = []
