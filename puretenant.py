@@ -288,7 +288,3 @@ for host in pt.flasharrays:
 pt.elasticsearch_bulk_index("flashblade", s3_stats)
 pt.elasticsearch_bulk_index("flashblade", nfs_stats)
 pt.elasticsearch_bulk_index('flasharray', vol_stats)
-
-### Data gathering and indexing is done, data pull and indexing work properly
-### NEXT STEPS:
-#       Build Kibana dashboards
